@@ -36,7 +36,7 @@ if [[ ! -d "$BACKUP_DIR" ]]; then
 fi
 
 # Percorre todos os arquivos no diretório de origem
-for FILE in "$SRC_DIR"; do
+for FILE in "$SRC_DIR"/*; do
   # Verifica se é um ficheiro (não diretório)
   if [[ -f "$FILE" ]]; then
     # Guarda o caminho do ficheiro
