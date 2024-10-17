@@ -16,22 +16,31 @@ if [[ "$1" == "-c" ]]; then
   shift
 fi
 
-# Atribui valores aos argumentos
-SRC_DIR="$1"
-BACKUP_DIR="$2"
+  # Atribui valores aos argumentos
+  SRC_DIR="$1"
+  BACKUP_DIR="$2"
 
 # Verifica se o diretório de origem existe
 if [[ ! -d "$SRC_DIR" ]]; then
   echo "O diretório de origem '$SRC_DIR' não existe."
   exit 1
+fi 
+
+# Se o argumento de backup estiver vazio, dá erro
+if [[ $BACKUP_DIR == '' ]]; then
+    echo "Uso: $0 [-c] <src> <backup_dst>"
+    exit 1
 fi
 
 # Cria o diretório de destino se não existir
 if [[ ! -d "$BACKUP_DIR" ]]; then
   echo "mkdir -p '$BACKUP_DIR'"
+  
+
+  
   # Se não estiver em checking cria a pasta
   if [[ $CHECK_MODE != "-c" ]]; then
-    mkdir -p "$BACKUP_DIR" || { echo "Erro ao criar o diretório de destino"; exit 1; }
+    mkdir -p "$BACKUP_DIR" || { echo "Erro ao criar o diretório de backup"; exit 1; }
   fi
 fi
 
