@@ -12,9 +12,8 @@ CHECK_MODE=""
 # Verifica se a opção -c foi fornecida
 if [[ "$1" == "-c" ]]; then
   CHECK_MODE="-c"
+  # Remove o primeiro argumento e deixa os outros no $1 e $2
   shift
-  SRC_DIR="$1"
-  BACKUP_DIR="$2"
 fi
 
 # Atribui valores aos argumentos
