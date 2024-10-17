@@ -39,7 +39,7 @@ if [[ ! -d "$BACKUP_DIR" ]]; then
 
   # Se não estiver em checking cria a pasta
   if [[ $CHECK_MODE != "-c" ]]; then
-    mkdir -p "$BACKUP_DIR" || { echo "Erro ao criar o diretório de backup"; exit 1;}
+    mkdir -p "$BACKUP_DIR"
   fi
 fi
 
@@ -54,7 +54,7 @@ for FILE in "$SRC_DIR"/*; do
       echo "cp '$FILE' '$BACKUP_FILE'"
       # Se não estiver em checking cria cópias dos ficheiros
       if [[ "$CHECK_MODE" != "-c" ]]; then
-        cp "$FILE" "$BACKUP_FILE" || { echo "Erro ao copiar '$FILE'"; exit 1;}
+        cp "$FILE" "$BACKUP_FILE"
       fi
     fi
   fi
