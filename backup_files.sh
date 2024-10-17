@@ -6,6 +6,9 @@ if [[ $# -lt 2 || $# -gt 3 ]]; then
   exit 1
 fi
 
+# Modo de checking
+CHECK_MODE=""
+
 # Verifica se a opção -c foi fornecida
 if [[ "$1" == "-c" ]]; then
   CHECK_MODE="-c"
@@ -17,7 +20,7 @@ fi
 # Atribui valores aos argumentos
 SRC_DIR="$1"
 BACKUP_DIR="$2"
-CHECK_MODE=""
+
 
 
 # Verifica se o diretório de origem existe
@@ -27,8 +30,13 @@ if [[ ! -d "$SRC_DIR" ]]; then
 fi
 
 # Cria o diretório de destino caso este não exista
-mkdir -p "$BACKUP_DIR" || { echo "Erro ao criar o diretório de destino"; exit 1; }
 
+if [[ ! -d "$BACKUP_DIR" ]]; then
+  echo "mkdir -p '$BACKUP_DIR'"
+  if [[ $CHECK_MODE != "-c" ]]; then
+    mkdir -p "$BACKUP_DIR" || { echo "Erro ao criar o diretório de destino"; exit 1; }
+  fi
+fi
 # Percorre todos os arquivos no diretório de origem
 for FILE in "$SRC_DIR"/*; do
   if [[ -f "$FILE" ]]; then
