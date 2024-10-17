@@ -21,8 +21,6 @@ fi
 SRC_DIR="$1"
 BACKUP_DIR="$2"
 
-
-
 # Verifica se o diretório de origem existe
 if [[ ! -d "$SRC_DIR" ]]; then
   echo "O diretório de origem '$SRC_DIR' não existe."
