@@ -89,6 +89,7 @@ for FILE in "$SRC_DIR"/*; do
         fi
       fi
     fi
+    
   # Verifica se é um diretório
   elif [[ -d "$FILE" ]]; then
     # Início do comando da recursiva
