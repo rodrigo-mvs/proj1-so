@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Verifica se o número de argumentos é válido
 if [[ $# -lt 2 || $# -gt 3 ]]; then
   echo "Uso: $0 [-c] <src> <backup_dst>"
