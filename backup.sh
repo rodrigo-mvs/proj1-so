@@ -34,6 +34,18 @@ while getopts "cb:r:" opt; do
     ;;
   b)
     TEXT_FILE="$OPTARG"
+
+    if [[ ! -f "$TEXT_FILE" ]]; then
+      echo "O ficheiro '$TEXT_FILE' não existe."
+      TEXT_FILE=""
+      usage
+    elif [[ -n "$TEXT_FILE" ]]; then
+      {
+        while IFS= read -r line || [ -n "$line" ]; do
+          EXCEPTION_FILES+=("$line")
+        done
+      } < "$TEXT_FILE"
+    fi
     ;;
   r)
     REGEX="$OPTARG"
@@ -48,16 +60,7 @@ while getopts "cb:r:" opt; do
 done
 
 
-if [[ ! -f "$TEXT_FILE" ]]; then
-  echo "O ficheiro '$TEXT_FILE' não existe."
-  usage
-elif [[ -n "$TEXT_FILE" ]]; then
-  {
-    while IFS= read -r line || [ -n "$line" ]; do
-      EXCEPTION_FILES+=("$line")
-    done
-  } < "$TEXT_FILE"
-fi
+
 
 # Remove os argumentos e deixa apenas os dois diretórios
 shift $((OPTIND - 1))
@@ -93,8 +96,6 @@ for FILE in "$SRC_DIR"/*; do
   # Verifica se é um ficheiro e se corresponde à expressão regular, se fornecida
   if [[ -f "$FILE" && ( -z "$REGEX" || "$(basename "$FILE")" =~ $REGEX ) ]]; then
 
-    
-    
     
     # # Obtém o nome do ficheiro sem extensão
     # FILENAME=$(basename "$FILE" | cut -d. -f1)
