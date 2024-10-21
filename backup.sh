@@ -17,10 +17,14 @@ function regexCheck() {
       fi
 }
 
+
 # Modo de checking (por default copia os ficheiros)
 CHECK_MODE=""
-BACKUP_LOG=""
+TEXT_FILE=""
 REGEX=""
+
+# Cria um array para armazenar os nomes dos arquivos de exceção
+declare -a EXCEPTION_FILES=()
 
 # Usa getopts para selecionar os
 while getopts "cb:r:" opt; do
@@ -29,21 +33,31 @@ while getopts "cb:r:" opt; do
     CHECK_MODE="-c"
     ;;
   b)
-    BACKUP_LOG="$OPTARG"
+    TEXT_FILE="$OPTARG"
     ;;
   r)
     REGEX="$OPTARG"
     regexCheck
     ;;
   *)
-    usage
-    ;;
-  \?)
     echo "Argumento inválido: -$opt"
+    usage
     ;;
   esac
 
 done
+
+
+if [[ ! -f "$TEXT_FILE" ]]; then
+  echo "O ficheiro '$TEXT_FILE' não existe."
+  usage
+elif [[ -n "$TEXT_FILE" ]]; then
+  {
+    while IFS= read -r line || [ -n "$line" ]; do
+      EXCEPTION_FILES+=("$line")
+    done
+  } < "$TEXT_FILE"
+fi
 
 # Remove os argumentos e deixa apenas os dois diretórios
 shift $((OPTIND - 1))
@@ -60,7 +74,7 @@ fi
 
 # Se o argumento de backup estiver vazio, dá erro
 if [[ $BACKUP_DIR == '' ]]; then
-    usage
+  usage
 fi
 
 
@@ -73,20 +87,31 @@ if [[ ! -d "$BACKUP_DIR" ]]; then
   fi
 fi
 
+
 # Percorre todos os arquivos no diretório de origem
 for FILE in "$SRC_DIR"/*; do
   # Verifica se é um ficheiro e se corresponde à expressão regular, se fornecida
   if [[ -f "$FILE" && ( -z "$REGEX" || "$(basename "$FILE")" =~ $REGEX ) ]]; then
+
+    
+    
+    
+    # # Obtém o nome do ficheiro sem extensão
+    # FILENAME=$(basename "$FILE" | cut -d. -f1)
+    # echo "Ficheiro: $FILENAME"
+
+    # # Verifica se o ficheiro está na lista de exceções
+    # if [[ ! $(grep -Fx "$FILE_NAME" <<< "${EXCEPTION_FILES[@]}") ]]; then
+    #   echo "Exceção: $FILE_NAME"
+    #   continue
+    # fi
+
     BACKUP_FILE="$BACKUP_DIR/$(basename "$FILE")"
     # Verifica se o ficheiro já existe ou se é mais recente que o backup
     if [[ ! -f "$BACKUP_FILE" || "$FILE" -nt "$BACKUP_FILE" ]]; then
       echo "cp '$FILE' '$BACKUP_FILE'"
       if [[ "$CHECK_MODE" != "-c" ]]; then
         cp "$FILE" "$BACKUP_FILE"
-        # Se foi fornecido um arquivo de log, cria uma log
-        if [[ -n "$BACKUP_LOG" ]]; then
-          echo "Backup de '$FILE' em '$BACKUP_FILE'" >> "$BACKUP_LOG"
-        fi
       fi
     fi
     
@@ -97,7 +122,7 @@ for FILE in "$SRC_DIR"/*; do
     
     # Adiciona os argumentos usados no script original
     [[ -n "$CHECK_MODE" ]] && CMD+=("-c")
-    [[ -n "$BACKUP_LOG" ]] && CMD+=("-b" "$BACKUP_LOG")
+    [[ -n "$TEXT_FILE" ]] && CMD+=("-b" "$TEXT_FILE")
     [[ -n "$REGEX" ]] && CMD+=("-r" "$REGEX")
 
     # Adiciona os diretórios
