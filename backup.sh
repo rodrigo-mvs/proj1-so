@@ -117,7 +117,7 @@ for FILE in "$SRC_DIR"/*; do
     
   # Verifica se é um diretório
   elif [[ -d "$FILE" ]]; then
-    # Início do comando da recursiva
+    # Início do comando para chamar a função recursivamente
     CMD=(bash "$0")
     
     # Adiciona os argumentos usados no script original
@@ -128,7 +128,7 @@ for FILE in "$SRC_DIR"/*; do
     # Adiciona os diretórios
     CMD+=("$FILE" "$BACKUP_DIR/$(basename "$FILE")")
 
-    # Volta a chamar a mesma função para a pasta
+    # Volta a chamar a mesma função para o diretório
     "${CMD[@]}"
   fi
 done
