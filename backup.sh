@@ -1,6 +1,6 @@
 #!/bin/bash
 function usage() {
-  echo "Uso: $0 [-c] [-b tfile] [-r regexpr] dir_trabalho dir_backup"
+  echo "Uso: $0 [-c] [-b tfile] [-r regexpr] <SRC_DIR> <BACKUP_DIR>"
   exit 1
 }
 
