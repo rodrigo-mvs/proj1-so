@@ -98,16 +98,11 @@ for FILE in "$SRC_DIR"/*; do
   FILENAME=$(basename "$FILE" | cut -d. -f1)
 
   # Verifica se o ficheiro está na lista de exceções
-  for EXCEPTION in "${EXCEPTION_FILES[@]}"; do
-    if [[ "$FILENAME" == "$EXCEPTION" ]]; then
-      FLAG_B="1"
-      continue
-    fi
-  done
-
-  if [[ $FLAG_B == "1" ]]; then
+  if [[ " ${EXCEPTION_FILES[*]} " == *" $FILENAME "* ]]; then
+    FLAG_B="1"
     continue
   fi
+
 
   # Verifica se é um ficheiro e se corresponde à expressão regular, se fornecida
   if [[ -f "$FILE" && ( -z "$REGEX" || "$(basename "$FILE")" =~ $REGEX ) ]]; then
