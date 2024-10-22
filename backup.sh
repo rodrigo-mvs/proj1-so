@@ -93,21 +93,27 @@ fi
 
 # Percorre todos os arquivos no diretório de origem
 for FILE in "$SRC_DIR"/*; do
+
+  FLAG_B="0"
+  FILENAME=$(basename "$FILE" | cut -d. -f1)
+
+  # Verifica se o ficheiro está na lista de exceções
+  for EXCEPTION in "${EXCEPTION_FILES[@]}"; do
+    if [[ "$FILENAME" == "$EXCEPTION" ]]; then
+      FLAG_B="1"
+      continue
+    fi
+  done
+
+  if [[ $FLAG_B == "1" ]]; then
+    continue
+  fi
+
   # Verifica se é um ficheiro e se corresponde à expressão regular, se fornecida
   if [[ -f "$FILE" && ( -z "$REGEX" || "$(basename "$FILE")" =~ $REGEX ) ]]; then
 
-    
-    # # Obtém o nome do ficheiro sem extensão
-    # FILENAME=$(basename "$FILE" | cut -d. -f1)
-    # echo "Ficheiro: $FILENAME"
-
-    # # Verifica se o ficheiro está na lista de exceções
-    # if [[ ! $(grep -Fx "$FILE_NAME" <<< "${EXCEPTION_FILES[@]}") ]]; then
-    #   echo "Exceção: $FILE_NAME"
-    #   continue
-    # fi
-
     BACKUP_FILE="$BACKUP_DIR/$(basename "$FILE")"
+
     # Verifica se o ficheiro já existe ou se é mais recente que o backup
     if [[ ! -f "$BACKUP_FILE" || "$FILE" -nt "$BACKUP_FILE" ]]; then
       echo "cp '$FILE' '$BACKUP_FILE'"
@@ -131,5 +137,7 @@ for FILE in "$SRC_DIR"/*; do
 
     # Volta a chamar a mesma função para o diretório
     "${CMD[@]}"
+
   fi
+  
 done
