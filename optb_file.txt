@@ -2,7 +2,5 @@ c
 error
 ta escondido
 bitcoin
-rgdrgdrgd
-grdg
-tyu
+nome_ficheiro
 ficheiro nome grande e espaços
