@@ -1,20 +1,4 @@
 #!/bin/bash
-
-# Função para comparar os hashes de dois arquivos
-compare_files() {
-    local SRC_FILE="$1"
-    local DEST_FILE="$2"
-
-    # Calcula os hashes MD5 dos dois arquivos
-    SRC_HASH=$(md5sum "$SRC_FILE" | cut -d' ' -f1)
-    DEST_HASH=$(md5sum "$DEST_FILE" | cut -d' ' -f1)
-
-    # Compara os hashes e imprime a mensagem de erro se forem diferentes
-    if [[ "$SRC_HASH" != "$DEST_HASH" ]]; then
-        echo "$SRC_FILE $DEST_FILE são diferentes."
-    fi
-}
-
 # Diretórios de origem e destino (substitua pelos seus diretórios)
 SRC_DIR="$1"
 DEST_DIR="$2"
