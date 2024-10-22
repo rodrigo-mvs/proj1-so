@@ -5,3 +5,4 @@ bitcoin
 rgdrgdrgd
 grdg
 tyu
+ficheiro nome grande e espaços
