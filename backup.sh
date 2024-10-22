@@ -1,9 +1,11 @@
 #!/bin/bash
+# Função para dar print do comando correto caso haja algum erro
 function usage() {
   echo "Uso: $0 [-c] [-b tfile] [-r regexpr] <SRC_DIR> <BACKUP_DIR>"
   exit 1
 }
 
+# Função de verificação do regex
 function regexCheck() {
 
         if [[ "" =~ $REGEX ]]; then
@@ -18,7 +20,7 @@ function regexCheck() {
 }
 
 
-# Inicialização das variáveis relativas aos argumentos
+# Inicialização das variáveis relativas aos argumentos -b, -r, -c
 CHECK_MODE=""
 TEXT_FILE=""
 REGEX=""
@@ -30,9 +32,11 @@ declare -a EXCEPTION_FILES=()
 while getopts "cb:r:" opt; do
   case "$opt" in
   c)
+    # Opção c (caso chamada, não copia os ficheiros)
     CHECK_MODE="-c"
     ;;
   b)
+    # Opção -b (lẽ o ficheiro e coloca cada linha num array)
     TEXT_FILE="$OPTARG"
 
     if [[ ! -f "$TEXT_FILE" ]]; then
@@ -48,7 +52,7 @@ while getopts "cb:r:" opt; do
     fi
     ;;
   r)
-  
+    # Opção -r (usa um regex e vê se o mesmo é válido)
     REGEX="$OPTARG"
     regexCheck
     ;;
@@ -67,7 +71,7 @@ done
 # Remove os argumentos e deixa apenas os dois diretórios
 shift $((OPTIND - 1))
 
-# Atribui valores aos argumentos
+# Atribui os nomes dos diretórios às variáveis
 SRC_DIR="$1"
 BACKUP_DIR="$2"
 

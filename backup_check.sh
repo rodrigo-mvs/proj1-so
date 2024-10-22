@@ -1,14 +1,14 @@
 #!/bin/bash
-# Diretórios de origem e destino (substitua pelos seus diretórios)
+
+# Diretórios de origem e destino
 SRC_DIR="$1"
 DEST_DIR="$2"
 
 # Itera sobre todos os arquivos no diretório de origem
 for FILE in "$SRC_DIR"/*; do
-    # Obtém o nome do arquivo sem o caminho
-    FILENAME=$(basename "$FILE")
+
     # Construi o caminho completo para o arquivo no diretório de destino
-    DEST_FILE="$DEST_DIR/$FILENAME"
+    DEST_FILE="$DEST_DIR/$(basename "$FILE")"
 
     # Verifica se o arquivo existe no diretório de destino
     if [[ -f "$DEST_FILE" ]]; then
@@ -21,8 +21,13 @@ for FILE in "$SRC_DIR"/*; do
 
       # Compara os hashes e imprime a mensagem de erro se forem diferentes
       if [[ "$SRC_HASH" != "$DEST_HASH" ]]; then
-          echo "$SRC_FILE $DEST_FILE são diferentes."
+          echo ""$SRC_FILE" "$DEST_FILE" são diferentes."
       fi
 
     fi
+
+    if [[ -d "$DEST_FILE" ]]; then
+      bash "$0" "$SRC_DIR/$(basename "$DEST_FILE")" "$DEST_FILE"
+    fi
+
 done
