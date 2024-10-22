@@ -18,7 +18,7 @@ function regexCheck() {
 }
 
 
-# Modo de checking (por default copia os ficheiros)
+# Inicialização das variáveis relativas aos argumentos
 CHECK_MODE=""
 TEXT_FILE=""
 REGEX=""
@@ -48,10 +48,12 @@ while getopts "cb:r:" opt; do
     fi
     ;;
   r)
+  
     REGEX="$OPTARG"
     regexCheck
     ;;
   *)
+    # Caso tenha um argumento diferente de -c, -b, -r, dá erro de argumento inválido
     echo "Argumento inválido: -$opt"
     usage
     ;;
@@ -98,11 +100,16 @@ for FILE in "$SRC_DIR"/*; do
   FILENAME=$(basename "$FILE" | cut -d. -f1)
 
   # Verifica se o ficheiro está na lista de exceções
-  if [[ " ${EXCEPTION_FILES[*]} " == *" $FILENAME "* ]]; then
-    FLAG_B="1"
+  for EXCEPTION in "${EXCEPTION_FILES[@]}"; do
+    if [[ "$FILENAME" == "$EXCEPTION" ]]; then
+      FLAG_B="1"
+      continue
+    fi
+  done
+
+  if [[ $FLAG_B == "1" ]]; then
     continue
   fi
-
 
   # Verifica se é um ficheiro e se corresponde à expressão regular, se fornecida
   if [[ -f "$FILE" && ( -z "$REGEX" || "$(basename "$FILE")" =~ $REGEX ) ]]; then
@@ -119,6 +126,7 @@ for FILE in "$SRC_DIR"/*; do
     
   # Verifica se é um diretório
   elif [[ -d "$FILE" ]]; then
+
     # Início do comando para chamar a função recursivamente
     CMD=(bash "$0")
     
