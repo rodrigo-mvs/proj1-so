@@ -96,18 +96,10 @@ fi
 # Percorre todos os arquivos no diretório de origem
 for FILE in "$SRC_DIR"/*; do
 
-  FLAG_B="0"
+
   FILENAME=$(basename "$FILE" | cut -d. -f1)
-
   # Verifica se o ficheiro está na lista de exceções
-  for EXCEPTION in "${EXCEPTION_FILES[@]}"; do
-    if [[ "$FILENAME" == "$EXCEPTION" ]]; then
-      FLAG_B="1"
-      continue
-    fi
-  done
-
-  if [[ $FLAG_B == "1" ]]; then
+  if [[ " ${EXCEPTION_FILES[*]} " == *" $FILENAME "* ]]; then
     continue
   fi
 
