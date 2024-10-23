@@ -45,8 +45,8 @@ while getopts "cb:r:" opt; do
       usage
     elif [[ -n "$TEXT_FILE" ]]; then
       {
-        while IFS= read -r line || [ -n "$line" ]; do
-          EXCEPTION_FILES+=("$line")
+        while IFS= read -r LINE || [ -n "$LINE" ]; do
+          EXCEPTION_FILES+=("$LINE")
         done
       } < "$TEXT_FILE"
     fi
@@ -64,8 +64,6 @@ while getopts "cb:r:" opt; do
   esac
 
 done
-
-
 
 
 # Remove os argumentos e deixa apenas os dois diretórios
