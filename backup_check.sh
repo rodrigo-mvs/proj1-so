@@ -18,7 +18,7 @@ for FILE in "$SRC_DIR"/*; do
       # Calcula os hashes MD5 dos dois arquivos
       SRC_HASH=$(md5sum "$SRC_FILE" | cut -d' ' -f1)
       DEST_HASH=$(md5sum "$DEST_FILE" | cut -d' ' -f1)
-
+      
       # Compara os hashes e imprime a mensagem de erro se forem diferentes
       if [[ "$SRC_HASH" != "$DEST_HASH" ]]; then
           echo ""$SRC_FILE" "$DEST_FILE" são diferentes."
