@@ -1,14 +1,11 @@
 #!/bin/bash
+# Função para exibir o uso correto do script em caso de erro
 function usage() {
   echo "Uso: $0 [-c] [-b tfile] [-r regexpr] <SRC_DIR> <BACKUP_DIR>"
-
   exit 1
 }
 
-function summary() {
-    echo "While backuping $SRC_DIR: $ERRORS Errors; $WARNINGS Warnings; $UPDATED Updated; $COPIED Copied ($COPIED_SIZE Bytes); $DELETED Deleted (0B)"
-}
-
+# Função de verificação do regex
 function regexCheck() {
   if [[ "" =~ $REGEX ]]; then
     echo ""
@@ -20,73 +17,60 @@ function regexCheck() {
   fi
 }
 
-# Inicialização das variáveis relativas aos argumentos
+# Inicialização das variáveis dos argumentos -b, -r, -c
 CHECK_MODE=""
 TEXT_FILE=""
 REGEX=""
 
-# Contadores para o sumário
-WARNINGS=0
-UPDATED=0
-COPIED=0
-DELETED=0
-COPIED_SIZE=0
-UPDATED_SIZE=0
-
-# Cria um array para armazenar os nomes dos arquivos de exceção
+# Array para armazenar os nomes dos arquivos de exceção
 declare -a EXCEPTION_FILES=()
 
-# Usa getopts para selecionar os argumentos
+# Processa os argumentos
 while getopts "cb:r:" opt; do
   case "$opt" in
-  c)
-    CHECK_MODE="-c"
-    ;;
-  b)
-    TEXT_FILE="$OPTARG"
-
-    if [[ ! -f "$TEXT_FILE" ]]; then
-      echo "O ficheiro '$TEXT_FILE' não existe."
-      TEXT_FILE=""
+    c) CHECK_MODE="-c" ;;
+    b)
+      TEXT_FILE="$OPTARG"
+      if [[ ! -f "$TEXT_FILE" ]]; then
+        echo "O ficheiro '$TEXT_FILE' não existe."
+        TEXT_FILE=""
+        usage
+      elif [[ -n "$TEXT_FILE" ]]; then
+        while IFS= read -r LINE || [ -n "$LINE" ]; do
+          EXCEPTION_FILES+=("$LINE")
+        done < "$TEXT_FILE"
+      fi
+      ;;
+    r)
+      REGEX="$OPTARG"
+      regexCheck
+      ;;
+    *)
+      echo "Argumento inválido: -$opt"
       usage
-    elif [[ -n "$TEXT_FILE" ]]; then
-      while IFS= read -r line || [ -n "$line" ]; do
-        EXCEPTION_FILES+=("$line")
-      done < "$TEXT_FILE"
-    fi
-    ;;
-  r)
-    REGEX="$OPTARG"
-    regexCheck
-    ;;
-  *)
-    echo "Argumento inválido: -$opt"
-    ERRORS=$((ERRORS + 1))
-    usage
-    ;;
+      ;;
   esac
 done
 
-# Remove os argumentos e deixa apenas os dois diretórios
+# Remove os argumentos processados e deixa apenas os dois diretórios
 shift $((OPTIND - 1))
 
-# Atribui valores aos argumentos
+# Define SRC_DIR e BACKUP_DIR
 SRC_DIR="$1"
 BACKUP_DIR="$2"
 
 # Verifica se o diretório de origem existe
 if [[ ! -d "$SRC_DIR" ]]; then
   echo "O diretório de origem '$SRC_DIR' não existe."
-  $ERRORS=$((ERRORS + 1))
   usage
 fi 
 
-# Se o argumento de backup estiver vazio, dá erro
+# Verifica se o diretório de backup foi especificado
 if [[ $BACKUP_DIR == '' ]]; then
   usage
 fi
 
-# Cria o diretório de destino se não existir
+# Cria o diretório de destino, se não existir
 if [[ ! -d "$BACKUP_DIR" ]]; then
   echo "mkdir -p '$BACKUP_DIR'"
   if [[ $CHECK_MODE != "-c" ]]; then
@@ -94,54 +78,90 @@ if [[ ! -d "$BACKUP_DIR" ]]; then
   fi
 fi
 
-# Percorre todos os arquivos no diretório de origem
-for FILE in "$SRC_DIR"/*; do
+# Inicialização dos contadores globais
+TOTAL_FILE_COPY=0
+TOTAL_FILE_UPDATE=0
+TOTAL_FILE_DELETED=0
+TOTAL_WARNINGS=0
+TOTAL_ERRORS=0
+TOTAL_SIZE_COPIED=0
+TOTAL_SIZE_DELETED=0
 
-  FILENAME=$(basename "$FILE" | cut -d. -f1)
+# Função de backup recursiva
+function backup_files() {
+  local src_dir="$1"
+  local backup_dir="$2"
 
-  # Verifica se o ficheiro está na lista de exceções
-  if [[ " ${EXCEPTION_FILES[*]} " == *" $FILENAME "* ]]; then
-    continue
-  fi
+  # Contadores locais para cada diretório
+  local dir_file_copy=0
+  local dir_file_update=0
+  local dir_file_deleted=0
+  local dir_warnings=0
+  local dir_errors=0
+  local dir_size_copied=0
+  local dir_size_deleted=0
 
-  # Verifica se é um ficheiro e se corresponde à expressão regular, se fornecida
-  if [[ -f "$FILE" && ( -z "$REGEX" || "$(basename "$FILE")" =~ $REGEX ) ]]; then
-
-    BACKUP_FILE="$BACKUP_DIR/$(basename "$FILE")"
-    FILE_SIZE=$(stat -c%s "$FILE")
-
-    # Verifica se o ficheiro já existe ou se é mais recente que o backup
-    if [[ ! -f "$BACKUP_FILE" ]]; then
-      echo "cp '$FILE' '$BACKUP_FILE'"
-      if [[ "$CHECK_MODE" != "-c" ]]; then
-        cp "$FILE" "$BACKUP_FILE"
-      fi
-      COPIED=$((COPIED + 1))
-      COPIED_SIZE=$((COPIED_SIZE + FILE_SIZE))
-    elif [[ "$FILE" -nt "$BACKUP_FILE" ]]; then
-      echo "cp '$FILE' '$BACKUP_FILE'"
-      if [[ "$CHECK_MODE" != "-c" ]]; then
-        cp "$FILE" "$BACKUP_FILE"
-      fi
-      UPDATED=$((UPDATED + 1))
-      UPDATED_SIZE=$((UPDATED_SIZE + FILE_SIZE))
-    elif [[ "$BACKUP_FILE" -nt "$FILE" ]]; then
-      WARNINGS=$((WARNINGS + 1))
-      echo "WARNING: backup entry '$BACKUP_FILE' is newer than '$FILE'; Should not happen"
+  # Loop para cada arquivo/diretório em src_dir
+  for FILE in "$src_dir"/*; do
+    FILENAME=$(basename "$FILE" | cut -d. -f1)
+    
+    # Ignora arquivos na lista de exceções
+    if [[ " ${EXCEPTION_FILES[*]} " == *" $FILENAME "* ]]; then
+      continue
     fi
 
-  # Verifica se é um diretório
-  elif [[ -d "$FILE" ]]; then
+    # Se for arquivo e corresponde ao regex (ou se regex não foi especificado)
+    if [[ -f "$FILE" && ( -z "$REGEX" || "$(basename "$FILE")" =~ $REGEX ) ]]; then
+      local backup_file="$backup_dir/$(basename "$FILE")"
+      local file_size=$(stat -c%s "$FILE")
 
-    CMD=(bash "$0")
-    [[ -n "$CHECK_MODE" ]] && CMD+=("-c")
-    [[ -n "$TEXT_FILE" ]] && CMD+=("-b" "$TEXT_FILE")
-    [[ -n "$REGEX" ]] && CMD+=("-r" "$REGEX")
+      # Se o arquivo não existe no backup, copia e incrementa o contador e tamanho
+      if [[ ! -f "$backup_file" ]]; then
+        echo "cp '$FILE' '$backup_file'"
+        dir_file_copy=$((dir_file_copy + 1))
+        dir_size_copied=$((dir_size_copied + file_size))
+        if [[ "$CHECK_MODE" != "-c" ]]; then
+          cp "$FILE" "$backup_file"
+        fi
+      # Se existir e tiver sido mudado, atualiza o ficheiro no backup
+      elif [[ "$FILE" -nt "$backup_file" ]]; then
+        echo "cp '$FILE' '$backup_file'"
+        dir_file_update=$((dir_file_update + 1))
+        dir_size_copied=$((dir_size_copied + file_size))
+        if [[ "$CHECK_MODE" != "-c" ]]; then
+          cp "$FILE" "$backup_file"
+        fi
+      fi
 
-    CMD+=("$FILE" "$BACKUP_DIR/$(basename "$FILE")")
+    # Se for um diretório, chama a função recursivamente
+    elif [[ -d "$FILE" ]]; then
+      local nested_backup_dir="$backup_dir/$(basename "$FILE")"
+      
+      # Cria o diretório de backup aninhado, se necessário
+      if [[ ! -d "$nested_backup_dir" && $CHECK_MODE != "-c" ]]; then
+        mkdir -p "$nested_backup_dir"
+      fi
+      
+      # Chamada recursiva para o próximo nível
+      backup_files "$FILE" "$nested_backup_dir"
+    fi
+  done
 
-    "${CMD[@]}"
-  fi
+  # Atualiza os contadores globais com os valores do diretório
+  TOTAL_FILE_COPY=$((TOTAL_FILE_COPY + dir_file_copy))
+  TOTAL_FILE_UPDATE=$((TOTAL_FILE_UPDATE + dir_file_update))
+  TOTAL_FILE_DELETED=$((TOTAL_FILE_DELETED + dir_file_deleted))
+  TOTAL_WARNINGS=$((TOTAL_WARNINGS + dir_warnings))
+  TOTAL_ERRORS=$((TOTAL_ERRORS + dir_errors))
+  TOTAL_SIZE_COPIED=$((TOTAL_SIZE_COPIED + dir_size_copied))
+  TOTAL_SIZE_DELETED=$((TOTAL_SIZE_DELETED + dir_size_deleted))
 
-done
+  # Exibe o resumo de operações para o diretório atual
+  echo "While backuping $src_dir: $dir_errors Errors; $dir_warnings Warnings; $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B); bytes;"
+}
 
+# Executa a função de backup na raiz
+backup_files "$SRC_DIR" "$BACKUP_DIR"
+
+# Exibe o resumo total ao final
+echo -e "\nTotal stats: $TOTAL_ERRORS Errors; $TOTAL_WARNINGS Warnings; $TOTAL_FILE_UPDATE Updated; $TOTAL_FILE_COPY Copied ($TOTAL_SIZE_COPIED B); $TOTAL_FILE_DELETED Deleted($TOTAL_SIZE_DELETED B);"
