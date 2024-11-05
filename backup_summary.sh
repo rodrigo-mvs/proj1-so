@@ -147,6 +147,20 @@ function backup_files() {
     fi
   done
 
+  # Remove arquivos do backup que não estão no diretório de origem
+  for BACKUP_FILE in "$backup_dir"/*; do
+    local src_file="$src_dir/$(basename "$BACKUP_FILE")"
+    if [[ ! -e "$src_file" ]]; then
+      local backup_file_size=$(stat -c%s "$BACKUP_FILE")
+      echo "rm -rf '$BACKUP_FILE'"
+      dir_file_deleted=$((dir_file_deleted + 1))
+      dir_size_deleted=$((dir_size_deleted + backup_file_size))
+      if [[ "$CHECK_MODE" != "-c" ]]; then
+        rm -rf "$BACKUP_FILE"
+      fi
+    fi
+  done
+
   # Atualiza os contadores globais com os valores do diretório
   TOTAL_FILE_COPY=$((TOTAL_FILE_COPY + dir_file_copy))
   TOTAL_FILE_UPDATE=$((TOTAL_FILE_UPDATE + dir_file_update))
@@ -157,7 +171,7 @@ function backup_files() {
   TOTAL_SIZE_DELETED=$((TOTAL_SIZE_DELETED + dir_size_deleted))
 
   # Exibe o resumo de operações para o diretório atual
-  echo "While backuping $src_dir: $dir_errors Errors; $dir_warnings Warnings; $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B); bytes;"
+  echo "While backuping $src_dir: $dir_errors Errors; $dir_warnings Warnings; $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B)"
 }
 
 # Executa a função de backup na raiz
