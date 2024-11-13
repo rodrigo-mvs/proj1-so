@@ -4,3 +4,5 @@ ta escondido
 bitcoin
 nome_ficheiro
 ficheiro nome grande e espaços
+abc
+a\n

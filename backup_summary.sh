@@ -127,6 +127,9 @@ function backup_files() {
   local dir_size_copied=0
   local dir_size_deleted=0
 
+  # Faz com que a opção /* no loop fique vazia, caso necessário, para evitar erros
+  shopt -s nullglob
+
   # Loop para cada arquivo/diretório em src_dir
   for FILE in "$src_dir"/*; do
     FILENAME=$(basename "$FILE" | cut -d. -f1)
@@ -205,6 +208,8 @@ function backup_files() {
       fi
     fi
   done
+  # Fecha a verificação
+  shopt -u nullglob
 
   # Atualiza os contadores globais com os valores do diretório
   TOTAL_FILE_COPY=$((TOTAL_FILE_COPY + dir_file_copy))
