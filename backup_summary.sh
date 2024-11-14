@@ -248,7 +248,7 @@ fi
 
 
 # Verifica se FULL_SRC_DIR é parte de FULL_BACKUP_DIR
-if [[ "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR"* ]]; then
+if [[ "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR" || "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR/"* ]]; then
   echo "ERROR: The backup directory cannot be a subdirectory of the source directory."
   TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
   FLAG_ERROR=1
@@ -257,11 +257,6 @@ fi
 # Executa a função de backup na raiz se não houver erros que não o permitam
 if [[ $FLAG_ERROR -eq 0 ]]; then
   backup_files "$SRC_DIR" "$BACKUP_DIR"
-fi
-
-# Exibe o resumo total ao final
-if [[ $CHECK_MODE != "-c" ]]; then
-  echo -e "\nTotal stats: $TOTAL_ERRORS Errors; $TOTAL_WARNINGS Warnings; $TOTAL_FILE_UPDATE Updated; $TOTAL_FILE_COPY Copied ($TOTAL_SIZE_COPIED B); $TOTAL_FILE_DELETED Deleted($TOTAL_SIZE_DELETED B);\n"
 else
-  echo -e "\nTotal stats: $TOTAL_FILE_UPDATE Updated; $TOTAL_FILE_COPY Copied ($TOTAL_SIZE_COPIED B); $TOTAL_FILE_DELETED Deleted($TOTAL_SIZE_DELETED B);\n"
+    echo -e "\nWhile backuping $SRC_DIR: $TOTAL_ERRORS Errors; $TOTAL_WARNINGS Warnings; $TOTAL_FILE_UPDATE Updated; $TOTAL_FILE_COPY Copied ($TOTAL_SIZE_COPIED B); $TOTAL_FILE_DELETED Deleted($TOTAL_SIZE_DELETED B);"
 fi
