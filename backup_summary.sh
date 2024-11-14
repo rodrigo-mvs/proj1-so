@@ -175,8 +175,8 @@ function backup_files() {
         dir_errors=$((dir_errors + 1))
       fi
 
-      # Se o arquivo de backup foi modificado mais recentemente que o original, incrementa o contador de avisos
-      if [[ "$backup_file" -ot "$FILE" ]]; then
+      # Se o arquivo de backup foi modificado mais recentemente que o original e os arquivos são diferentes, incrementa o contador de avisos
+      if [[ "$FILE" -ot "$backup_file" ]] && ! cmp -s "$FILE" "$backup_file"; then
         echo "WARNING: '$backup_file' was modified more recently than '$FILE'"
         dir_warnings=$((dir_warnings + 1))
       fi
