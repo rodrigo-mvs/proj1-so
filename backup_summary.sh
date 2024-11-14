@@ -218,11 +218,15 @@ if [[ ! -d "$BACKUP_DIR" ]]; then
   fi
 fi
 
+# Obtém o caminho completo para SRC_DIR
+FULL_BACKUP_DIR=$(realpath "$BACKUP_DIR")
+# Obtém o diretório pai de SRC_DIR
+PARENT_BACKUP_DIR=$(dirname "$FULL_BACKUP_DIR")
 
 # Obtém o tamanho do diretório de origem
 SRC_SIZE=$(du -s "$SRC_DIR" | awk '{print $1}')
 # Obtém o espaço disponível no diretório de backup
-BACKUP_FREE=$(df "$BACKUP_DIR" | awk 'NR==2 {print $4}')
+BACKUP_FREE=$(df "$PARENT_BACKUP_DIR" | awk 'NR==2 {print $4}')
 
 # Verifica se há armazenamento suficiente no diretório de backup
 if [[ "$SRC_SIZE" -gt "$BACKUP_FREE" ]]; then
@@ -230,6 +234,7 @@ if [[ "$SRC_SIZE" -gt "$BACKUP_FREE" ]]; then
   TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
   FLAG_ERROR=1
 fi
+
 
 
 # Se houver erro ao criar o diretório de backup, exibe mensagem de erro e sai
