@@ -1,6 +1,0 @@
-wfgmerhçtjymkgfthrghtjy
-efsgrdthfyjgthrghtjgkj
-erdthfjgkhhdffjhgkjh
-gdhfjgkjhhdtfjygkhgtudfjk
-dsgdhfjgkjtyjkkghkykg
-gdfhgjhjhjfdhfffjkgk,

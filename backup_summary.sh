@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Função para exibir o uso correto do script em caso de erro
 function usage() {
   echo "Usage: $0 [-c] [-b tfile] [-r regexpr] <SRC_DIR> <BACKUP_DIR>"
@@ -16,102 +17,6 @@ function regexCheck() {
     fi
   fi
 }
-
-# Inicialização das variáveis dos argumentos -b, -r, -c
-CHECK_MODE=""
-TEXT_FILE=""
-REGEX=""
-
-# Array para armazenar os nomes dos arquivos de exceção
-declare -a EXCEPTION_FILES=()
-
-# Processa os argumentos
-while getopts "cb:r:" opt; do
-  case "$opt" in
-    c) CHECK_MODE="-c" ;;
-    b)
-      TEXT_FILE="$OPTARG"
-      if [[ ! -f "$TEXT_FILE" ]]; then
-        echo "ERROR: The file '$TEXT_FILE' does not exist."
-        TEXT_FILE=""
-        usage
-      elif [[ -n "$TEXT_FILE" ]]; then
-        while IFS= read -r LINE || [ -n "$LINE" ]; do
-          EXCEPTION_FILES+=("$LINE")
-        done < "$TEXT_FILE"
-      fi
-      ;;
-    r)
-      REGEX="$OPTARG"
-      regexCheck
-      ;;
-    *)
-      echo "ERRO: Invalid argument: -$opt"
-      usage
-      ;;
-  esac
-done
-
-# Remove os argumentos processados e deixa apenas os dois diretórios
-shift $((OPTIND - 1))
-
-# Define SRC_DIR e BACKUP_DIR
-SRC_DIR="$1"
-BACKUP_DIR="$2"
-
-# Verifica se o diretório de origem existe
-if [[ ! -d "$SRC_DIR" ]]; then
-  echo "ERROR: The source directory '$SRC_DIR' does not exist."
-  usage
-fi 
-
-# Verifica se o diretório de backup foi especificado
-if [[ $BACKUP_DIR == '' ]]; then
-  usage
-fi
-
-# Cria o diretório de destino, se não existir
-if [[ ! -d "$BACKUP_DIR" ]]; then
-  echo "mkdir -p '$BACKUP_DIR'"
-  if [[ $CHECK_MODE != "-c" ]]; then
-    mkdir -p "$BACKUP_DIR"
-  fi
-fi
-
-# Obtém o tamanho do diretório de origem
-SRC_SIZE=$(du -s "$SRC_DIR" | awk '{print $1}')
-# Obtém o espaço disponível no diretório de backup
-BACKUP_FREE=$(df "$BACKUP_DIR" | awk 'NR==2 {print $4}')
-
-
-# Verifica se há armazenamento suficiente no diretório de backup
-if [ "$SRC_SIZE" -gt "$BACKUP_FREE" ]; then
-  echo "ERROR: backup directory does not have enough space"
-  exit 1
-fi
-# Se houver erro ao criar o diretório de backup, exibe mensagem de erro e sai
-if [[ $? -ne 0 ]]; then
-  echo "ERROR: Failed to create the backup directory: $BACKUP_DIR"
-  exit 1
-fi
-
-FULL_SRC_DIR=$(realpath "$SRC_DIR")
-FULL_BACKUP_DIR=$(realpath "$BACKUP_DIR")
-
-# Verifica se FULL_SRC_DIR é parte de FULL_BACKUP_DIR
-if [[ "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR"* ]]; then
-  echo "ERROR: The backup directory cannot be a subdirectory of the source directory."
-  exit 1
-fi
-
-# Inicialização dos contadores globais
-TOTAL_FILE_COPY=0
-TOTAL_FILE_UPDATE=0
-TOTAL_FILE_DELETED=0
-TOTAL_WARNINGS=0
-TOTAL_ERRORS=0
-TOTAL_SIZE_COPIED=0
-TOTAL_SIZE_DELETED=0
 
 # Função de backup recursiva
 function backup_files() {
@@ -186,28 +91,38 @@ function backup_files() {
       local nested_backup_dir="$backup_dir/$(basename "$FILE")"
       
       # Cria o diretório de backup aninhado, se necessário
-      if [[ ! -d "$nested_backup_dir" && $CHECK_MODE != "-c" ]]; then
-        mkdir -p "$nested_backup_dir"
+      if [[ ! -d "$nested_backup_dir" ]]; then
+        echo -e "\nmkdir -p '$nested_backup_dir'"
+        if [[ $CHECK_MODE != "-c" ]]; then
+          mkdir -p "$nested_backup_dir"
+        fi
       fi
       
+      
+  
       # Chamada recursiva para o próximo nível
       backup_files "$FILE" "$nested_backup_dir"
     fi
   done
 
-  # Remove arquivos do backup que não estão no diretório de origem
-  for BACKUP_FILE in "$backup_dir"/*; do
-    local src_file="$src_dir/$(basename "$BACKUP_FILE")"
-    if [[ ! -e "$src_file" ]]; then
-      local backup_file_size=$(stat -c%s "$BACKUP_FILE")
-      echo "rm -rf '$BACKUP_FILE'"
-      dir_file_deleted=$((dir_file_deleted + 1))
-      dir_size_deleted=$((dir_size_deleted + backup_file_size))
-      if [[ "$CHECK_MODE" != "-c" ]]; then
-        rm -rf "$BACKUP_FILE"
+  # Verifica se o diretório de backup existe: se estiver em check e o diretório de backup não existir, não há ficheiros para copiar 
+  if [[ -d "$backup_dir" ]]; then
+    # Remove arquivos do backup que não estão no diretório de origem
+    for BACKUP_FILE in "$backup_dir"/*; do
+      local src_file="$src_dir/$(basename "$BACKUP_FILE")"
+      if [[ ! -e "$src_file" ]]; then
+        local backup_file_size=$(stat -c%s "$BACKUP_FILE")
+        echo "rm -rf '$BACKUP_FILE'"
+        dir_file_deleted=$((dir_file_deleted + 1))
+        dir_size_deleted=$((dir_size_deleted + backup_file_size))
+        if [[ "$CHECK_MODE" != "-c" ]]; then
+          rm -rf "$BACKUP_FILE"
+        fi
       fi
-    fi
-  done
+    done
+  fi
+
+
   # Fecha a verificação
   shopt -u nullglob
 
@@ -228,8 +143,116 @@ function backup_files() {
   fi
 }
 
-# Executa a função de backup na raiz
-backup_files "$SRC_DIR" "$BACKUP_DIR"
+
+# Inicialização das variáveis dos argumentos -b, -r, -c
+CHECK_MODE=""
+TEXT_FILE=""
+REGEX=""
+
+# Array para armazenar os nomes dos arquivos de exceção
+declare -a EXCEPTION_FILES=()
+
+# Processa os argumentos
+while getopts "cb:r:" opt; do
+  case "$opt" in
+    c) CHECK_MODE="-c" ;;
+    b)
+      TEXT_FILE="$OPTARG"
+      if [[ ! -f "$TEXT_FILE" ]]; then
+        echo "ERROR: The file '$TEXT_FILE' does not exist."
+        TEXT_FILE=""
+        usage
+      elif [[ -n "$TEXT_FILE" ]]; then
+        while IFS= read -r LINE || [ -n "$LINE" ]; do
+          EXCEPTION_FILES+=("$LINE")
+        done < "$TEXT_FILE"
+      fi
+      ;;
+    r)
+      REGEX="$OPTARG"
+      regexCheck
+      ;;
+    *)
+      echo "ERRO: Invalid argument: -$opt"
+      usage
+      ;;
+  esac
+done
+
+# Remove os argumentos processados e deixa apenas os dois diretórios
+shift $((OPTIND - 1))
+
+# Define SRC_DIR e BACKUP_DIR
+SRC_DIR="$1"
+BACKUP_DIR="$2"
+
+# Inicialização dos contadores globais
+TOTAL_FILE_COPY=0
+TOTAL_FILE_UPDATE=0
+TOTAL_FILE_DELETED=0
+TOTAL_WARNINGS=0
+TOTAL_ERRORS=0
+TOTAL_SIZE_COPIED=0
+TOTAL_SIZE_DELETED=0
+
+FLAG_ERROR=0
+
+# Verifica se o diretório de origem existe
+if [[ ! -d "$SRC_DIR" ]]; then
+  echo "ERROR: The source directory '$SRC_DIR' does not exist."
+  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+  FLAG_ERROR=1
+fi 
+
+# Verifica se o diretório de backup foi especificado
+if [[ $BACKUP_DIR == '' ]]; then
+  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+  FLAG_ERROR=1
+fi
+
+# Cria o diretório de destino, se não existir
+if [[ ! -d "$BACKUP_DIR" ]]; then
+  echo "mkdir -p '$BACKUP_DIR'"
+  if [[ $CHECK_MODE != "-c" ]]; then
+    mkdir -p "$BACKUP_DIR"
+  fi
+fi
+
+
+# Obtém o tamanho do diretório de origem
+SRC_SIZE=$(du -s "$SRC_DIR" | awk '{print $1}')
+# Obtém o espaço disponível no diretório de backup
+BACKUP_FREE=$(df "$BACKUP_DIR" | awk 'NR==2 {print $4}')
+
+# Verifica se há armazenamento suficiente no diretório de backup
+if [[ "$SRC_SIZE" -gt "$BACKUP_FREE" ]]; then
+  echo "ERROR: backup directory does not have enough space"
+  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+  FLAG_ERROR=1
+fi
+
+
+# Se houver erro ao criar o diretório de backup, exibe mensagem de erro e sai
+if [[ $? -ne 0 ]]; then
+  echo "ERROR: Failed to create the backup directory: $BACKUP_DIR"
+  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+  FLAG_ERROR=1
+fi
+
+FULL_SRC_DIR=$(realpath "$SRC_DIR")
+FULL_BACKUP_DIR=$(realpath "$BACKUP_DIR")
+
+# Verifica se FULL_SRC_DIR é parte de FULL_BACKUP_DIR
+if [[ "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR"* ]]; then
+  echo "ERROR: The backup directory cannot be a subdirectory of the source directory."
+  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+  FLAG_ERROR=1
+fi 
+
+# Executa a função de backup na raiz se não houver erros que não o permitam
+if [[ $FLAG_ERROR -eq 0 ]]; then
+  backup_files "$SRC_DIR" "$BACKUP_DIR"
+fi
 
 # Exibe o resumo total ao final
 if [[ $CHECK_MODE != "-c" ]]; then
