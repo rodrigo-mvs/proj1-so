@@ -70,17 +70,6 @@ if [[ $BACKUP_DIR == '' ]]; then
   usage
 fi
 
-# Obtém o tamanho do diretório de origem
-SRC_SIZE=$(du -s "$SRC_DIR" | awk '{print $1}')
-# Obtém o espaço disponível no diretório de backup
-BACKUP_FREE=$(df "$BACKUP_DIR" | awk 'NR==2 {print $4}')
-
-# Verifica se há armazenamento suficiente no diretório de backup
-if [ "$SRC_SIZE" -gt "$BACKUP_FREE" ]; then
-  echo "ERROR: backup directory does not have enough space"
-  exit 1
-fi
-
 # Cria o diretório de destino, se não existir
 if [[ ! -d "$BACKUP_DIR" ]]; then
   echo "mkdir -p '$BACKUP_DIR'"
@@ -89,6 +78,17 @@ if [[ ! -d "$BACKUP_DIR" ]]; then
   fi
 fi
 
+# Obtém o tamanho do diretório de origem
+SRC_SIZE=$(du -s "$SRC_DIR" | awk '{print $1}')
+# Obtém o espaço disponível no diretório de backup
+BACKUP_FREE=$(df "$BACKUP_DIR" | awk 'NR==2 {print $4}')
+
+
+# Verifica se há armazenamento suficiente no diretório de backup
+if [ "$SRC_SIZE" -gt "$BACKUP_FREE" ]; then
+  echo "ERROR: backup directory does not have enough space"
+  exit 1
+fi
 # Se houver erro ao criar o diretório de backup, exibe mensagem de erro e sai
 if [[ $? -ne 0 ]]; then
   echo "ERROR: Failed to create the backup directory: $BACKUP_DIR"
