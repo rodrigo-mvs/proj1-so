@@ -218,8 +218,10 @@ if [[ ! -d "$BACKUP_DIR" ]]; then
   fi
 fi
 
-# Obtém o caminho completo para SRC_DIR
+# Obtém o caminhos completos
+FULL_SRC_DIR=$(realpath "$SRC_DIR")
 FULL_BACKUP_DIR=$(realpath "$BACKUP_DIR")
+
 # Obtém o diretório pai de SRC_DIR
 PARENT_BACKUP_DIR=$(dirname "$FULL_BACKUP_DIR")
 
@@ -244,8 +246,6 @@ if [[ $? -ne 0 ]]; then
   FLAG_ERROR=1
 fi
 
-FULL_SRC_DIR=$(realpath "$SRC_DIR")
-FULL_BACKUP_DIR=$(realpath "$BACKUP_DIR")
 
 # Verifica se FULL_SRC_DIR é parte de FULL_BACKUP_DIR
 if [[ "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR"* ]]; then
