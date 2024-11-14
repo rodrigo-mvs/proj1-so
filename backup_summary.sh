@@ -18,11 +18,12 @@ function regexCheck() {
   fi
 }
 
+ SUMMARY_MSG=""
 # Função de backup recursiva
 function backup_files() {
   local src_dir="$1"
   local backup_dir="$2"
-
+ 
   # Contadores locais para cada diretório
   local dir_file_copy=0
   local dir_file_update=0
@@ -97,9 +98,7 @@ function backup_files() {
           mkdir -p "$nested_backup_dir"
         fi
       fi
-      
-      
-  
+
       # Chamada recursiva para o próximo nível
       backup_files "$FILE" "$nested_backup_dir"
     fi
@@ -122,27 +121,16 @@ function backup_files() {
     done
   fi
 
-
   # Fecha a verificação
   shopt -u nullglob
-
-  # Atualiza os contadores globais com os valores do diretório
-  TOTAL_FILE_COPY=$((TOTAL_FILE_COPY + dir_file_copy))
-  TOTAL_FILE_UPDATE=$((TOTAL_FILE_UPDATE + dir_file_update))
-  TOTAL_FILE_DELETED=$((TOTAL_FILE_DELETED + dir_file_deleted))
-  TOTAL_WARNINGS=$((TOTAL_WARNINGS + dir_warnings))
-  TOTAL_ERRORS=$((TOTAL_ERRORS + dir_errors))
-  TOTAL_SIZE_COPIED=$((TOTAL_SIZE_COPIED + dir_size_copied))
-  TOTAL_SIZE_DELETED=$((TOTAL_SIZE_DELETED + dir_size_deleted))
-
   # Exibe o resumo de operações para o diretório atual
-  if [[ CHECK_MODE != "-c"  ]]; then
-    echo -e "While backuping $src_dir: $dir_errors Errors; $dir_warnings Warnings; $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B); bytes;\n"
+  if [[ CHECK_MODE != "-c" ]]; then
+    SUMMARY_MSG="While backuping $src_dir: $dir_errors Errors; $dir_warnings Warnings; $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B);\n"
+    
   else
-    echo -e "While backuping $src_dir: $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B); bytes;\n"
+    SUMMARY_MSG="While backuping $src_dir: $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B);\n"
   fi
 }
-
 
 # Inicialização das variáveis dos argumentos -b, -r, -c
 CHECK_MODE=""
@@ -185,28 +173,17 @@ shift $((OPTIND - 1))
 # Define SRC_DIR e BACKUP_DIR
 SRC_DIR="$1"
 BACKUP_DIR="$2"
-
-# Inicialização dos contadores globais
-TOTAL_FILE_COPY=0
-TOTAL_FILE_UPDATE=0
-TOTAL_FILE_DELETED=0
-TOTAL_WARNINGS=0
-TOTAL_ERRORS=0
-TOTAL_SIZE_COPIED=0
-TOTAL_SIZE_DELETED=0
-
 FLAG_ERROR=0
 
 # Verifica se o diretório de origem existe
 if [[ ! -d "$SRC_DIR" ]]; then
   echo "ERROR: The source directory '$SRC_DIR' does not exist."
-  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
   FLAG_ERROR=1
 fi 
 
 # Verifica se o diretório de backup foi especificado
 if [[ $BACKUP_DIR == '' ]]; then
-  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+  echo "ERROR: Backup directory is invalid."
   FLAG_ERROR=1
 fi
 
@@ -233,30 +210,30 @@ BACKUP_FREE=$(df "$PARENT_BACKUP_DIR" | awk 'NR==2 {print $4}')
 # Verifica se há armazenamento suficiente no diretório de backup
 if [[ "$SRC_SIZE" -gt "$BACKUP_FREE" ]]; then
   echo "ERROR: backup directory does not have enough space"
-  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
   FLAG_ERROR=1
 fi
-
-
 
 # Se houver erro ao criar o diretório de backup, exibe mensagem de erro e sai
 if [[ $? -ne 0 ]]; then
   echo "ERROR: Failed to create the backup directory: $BACKUP_DIR"
-  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
   FLAG_ERROR=1
 fi
 
-
 # Verifica se FULL_SRC_DIR é parte de FULL_BACKUP_DIR
 if [[ "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR" || "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR/"* ]]; then
+if [[ "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR" || "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR/"* ]]; then
   echo "ERROR: The backup directory cannot be a subdirectory of the source directory."
-  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
   FLAG_ERROR=1
 fi 
 
-# Executa a função de backup na raiz se não houver erros que não o permitam
+# Executa o backup caso não haja erros
 if [[ $FLAG_ERROR -eq 0 ]]; then
   backup_files "$SRC_DIR" "$BACKUP_DIR"
+fi
+
+# Exibe o resumo total ao final
+if [[ $CHECK_MODE != "-c" ]]; then
+  echo -e "\nTotal stats: $TOTAL_ERRORS Errors; $TOTAL_WARNINGS Warnings; $TOTAL_FILE_UPDATE Updated; $TOTAL_FILE_COPY Copied ($TOTAL_SIZE_COPIED B); $TOTAL_FILE_DELETED Deleted($TOTAL_SIZE_DELETED B);\n"
 else
-    echo -e "\nWhile backuping $SRC_DIR: $TOTAL_ERRORS Errors; $TOTAL_WARNINGS Warnings; $TOTAL_FILE_UPDATE Updated; $TOTAL_FILE_COPY Copied ($TOTAL_SIZE_COPIED B); $TOTAL_FILE_DELETED Deleted($TOTAL_SIZE_DELETED B);"
+  echo -e "\nTotal stats: $TOTAL_FILE_UPDATE Updated; $TOTAL_FILE_COPY Copied ($TOTAL_SIZE_COPIED B); $TOTAL_FILE_DELETED Deleted($TOTAL_SIZE_DELETED B);\n"
 fi
