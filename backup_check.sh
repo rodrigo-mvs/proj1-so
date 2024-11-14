@@ -21,7 +21,7 @@ for FILE in "$SRC_DIR"/*; do
       
       # Compara os hashes e imprime a mensagem de erro se forem diferentes
       if [[ "$SRC_HASH" != "$DEST_HASH" ]]; then
-          echo ""$SRC_FILE" "$DEST_FILE" são diferentes."
+          echo ""$SRC_FILE" "$DEST_FILE" differ."
       fi
 
     fi
