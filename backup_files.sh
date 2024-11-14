@@ -34,9 +34,8 @@ fi
 
 # Cria o diretório de destino se não existir
 if [[ ! -d "$BACKUP_DIR" ]]; then
-  echo "\nmkdir -p '$BACKUP_DIR'\n"
+  echo -e "mkdir -p '$BACKUP_DIR'\n"
   
-
   # Se não estiver em checking cria a pasta
   if [[ $CHECK_MODE != "-c" ]]; then
     mkdir -p "$BACKUP_DIR"
