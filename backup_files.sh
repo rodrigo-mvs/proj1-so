@@ -34,7 +34,7 @@ fi
 
 # Cria o diretório de destino se não existir
 if [[ ! -d "$BACKUP_DIR" ]]; then
-  echo -e "mkdir '$BACKUP_DIR'"
+  echo -e "mkdir $BACKUP_DIR"
   
   # Se não estiver em checking cria a pasta
   if [[ $CHECK_MODE != "-c" ]]; then
@@ -50,7 +50,7 @@ for FILE in "$SRC_DIR"/*; do
     BACKUP_FILE="$BACKUP_DIR/$(basename "$FILE")"
     # Verifica se o ficheiro já existe ou, se exstir, a data de modificação.
     if [[ ! -f "$BACKUP_FILE" || "$FILE" -nt "$BACKUP_FILE" ]]; then
-      echo "cp -a '$FILE' '$BACKUP_FILE'"
+      echo "cp -a $FILE $BACKUP_FILE"
       # Se não estiver em checking cria cópias dos ficheiros
       if [[ "$CHECK_MODE" != "-c" ]]; then
         cp -a "$FILE" "$BACKUP_FILE"
