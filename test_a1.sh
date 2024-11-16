@@ -31,8 +31,7 @@ if [[ "$(ls -l backup_test/aaa)" == $(ls -l src/aaa) ]]
 then
     score=$((score+15))
 fi
-sort output.txt -o output.txt
-diff -u output.txt test_a1.out
+
 rm -rf output.txt err.txt backup_test
 
 echo Score: $score

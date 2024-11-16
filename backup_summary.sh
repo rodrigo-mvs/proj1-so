@@ -139,9 +139,9 @@ function backup_files() {
 
   # Exibe o resumo de operações para o diretório atual
   if [[ CHECK_MODE != "-c"  ]]; then
-    echo -e "While backuping $src_dir: $dir_errors Errors; $dir_warnings Warnings; $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B)"
+    echo -e "While backuping $src_dir: $dir_errors Errors; $dir_warnings Warnings; $dir_file_update Updated; $dir_file_copy Copied (${dir_size_copied}B); $dir_file_deleted Deleted (${dir_size_deleted}B)"
   else
-    echo -e "While backuping $src_dir: $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted\B)"
+    echo -e "While backuping $src_dir: $dir_file_update Updated; $dir_file_copy Copied (${dir_size_copied}B); $dir_file_deleted Deleted (${dir_size_deleted}B)"
   fi
 }
 
