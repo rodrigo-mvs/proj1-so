@@ -245,7 +245,6 @@ if [[ "$SRC_SIZE" -gt "$BACKUP_FREE" ]]; then
   FLAG_ERROR=1
 fi
 
-
 # Verifica se FULL_SRC_DIR é parte de FULL_BACKUP_DIR
 if [[ "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR" || "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR/"* ]]; then
   echo "ERROR: The backup directory cannot be a subdirectory of the source directory."
