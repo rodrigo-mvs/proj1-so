@@ -87,7 +87,7 @@ fi
 
 # Cria o diretório de destino se não existir
 if [[ ! -d "$BACKUP_DIR" ]]; then
-  echo "mkdir '$BACKUP_DIR'"
+  echo "mkdir $BACKUP_DIR"
   # Se não estiver em checking cria a pasta
   if [[ $CHECK_MODE != "-c" ]]; then
     mkdir -p "$BACKUP_DIR"
@@ -104,7 +104,7 @@ for FILE in "$SRC_DIR"/*; do
 
     if [[ -d "$FILE" ]]; then
       TARGET_DIR="$BACKUP_DIR/$BASENAME"
-      echo "mkdir '$TARGET_DIR'"
+      echo "mkdir $TARGET_DIR"
       if [[ "$CHECK_MODE" != "-c" ]]; then
         mkdir -p "$TARGET_DIR"
       fi
@@ -118,7 +118,7 @@ for FILE in "$SRC_DIR"/*; do
     BACKUP_FILE="$BACKUP_DIR/$BASENAME"
     # Verifica se é ficheiro e se não se encontra na lista de ficheiros a excluír 
     if [[ ! -f "$BACKUP_FILE" || "$FILE" -nt "$BACKUP_FILE" ]]; then
-      echo "cp -a '$FILE' '$BACKUP_FILE'"
+      echo "cp -a $FILE $BACKUP_FILE"
       if [[ "$CHECK_MODE" != "-c" ]]; then
         cp -a "$FILE" "$BACKUP_FILE"
       fi

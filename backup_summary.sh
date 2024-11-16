@@ -35,30 +35,30 @@ function backup_files() {
   # Faz com que a opção /* no loop fique vazia, caso necessário, para evitar erros
   shopt -s nullglob
 
-  # Loop para cada arquivo/diretório em src_dir
+  # Primeiro, processa os arquivos no diretório atual
   for FILE in "$src_dir"/*; do
-    FILENAME=$(basename "$FILE" | cut -d. -f1)
-    
-    # Ignora arquivos na lista de exceções
-    if [[ " ${EXCEPTION_FILES[*]} " == *" $FILENAME "* ]]; then
-      continue
-    fi
-
-    # Se for arquivo e corresponde ao regex (ou se regex não foi especificado)
     if [[ -f "$FILE" && ( -z "$REGEX" || "$(basename "$FILE")" =~ $REGEX ) ]]; then
+      FILENAME=$(basename "$FILE" | cut -d. -f1)
+      
+      # Ignora arquivos na lista de exceções
+      if [[ " ${EXCEPTION_FILES[*]} " == *" $FILENAME "* ]]; then
+        continue
+      fi
+
       local backup_file="$backup_dir/$(basename "$FILE")"
+      
       local file_size=$(stat -c%s "$FILE")
 
       # Se o arquivo não existe no backup, copia e incrementa o contador e tamanho
       if [[ ! -f "$backup_file" ]]; then
-        echo "cp '$FILE' '$backup_file'"
+        echo "cp -a $FILE $backup_file"
         dir_file_copy=$((dir_file_copy + 1))
         dir_size_copied=$((dir_size_copied + file_size))
         if [[ "$CHECK_MODE" != "-c" ]]; then
-          cp "$FILE" "$backup_file"
+          cp -a "$FILE" "$backup_file"
         fi
 
-      # Se der erro na cópia, incrementa o contador de erros
+        # Se der erro na cópia, incrementa o contador de erros
         if [[ $? -ne 0 ]]; then
           echo "ERROR: Failed to copy '$FILE' to '$backup_file'"
           dir_errors=$((dir_errors + 1))
@@ -66,18 +66,20 @@ function backup_files() {
 
       # Se existir e tiver sido mudado, atualiza o ficheiro no backup
       elif [[ "$FILE" -nt "$backup_file" ]]; then
-        echo "cp '$FILE' '$backup_file'"
+        echo "cp -a $FILE $backup_file"
+        local backup_file_size=$(stat -c%s "$backup_dir/$(basename "$FILE")")
+        newsize=$((file_size - backup_file_size))
         dir_file_update=$((dir_file_update + 1))
-        dir_size_copied=$((dir_size_copied + file_size))
+        dir_size_copied=$((dir_size_copied + newsize))
         if [[ "$CHECK_MODE" != "-c" ]]; then
-          cp "$FILE" "$backup_file"
+          cp -a "$FILE" "$backup_file"
         fi
-      fi
 
-      # Se der erro na atualização, incrementa o contador de erros
-      if [[ $? -ne 0 ]]; then
-        echo "ERROR: Failed to update '$backup_file' with '$FILE'"
-        dir_errors=$((dir_errors + 1))
+        # Se der erro na atualização, incrementa o contador de erros
+        if [[ $? -ne 0 ]]; then
+          echo "ERROR: Failed to update '$backup_file' with '$FILE'"
+          dir_errors=$((dir_errors + 1))
+        fi
       fi
 
       # Se o arquivo de backup foi modificado mais recentemente que o original e os arquivos são diferentes, incrementa o contador de avisos
@@ -85,21 +87,22 @@ function backup_files() {
         echo "WARNING: '$backup_file' was modified more recently than '$FILE'"
         dir_warnings=$((dir_warnings + 1))
       fi
+    fi
+  done
 
-    # Se for um diretório, chama a função recursivamente
-    elif [[ -d "$FILE" ]]; then
+  # Em seguida, processa os subdiretórios
+  for FILE in "$src_dir"/*; do
+    if [[ -d "$FILE" ]]; then
       local nested_backup_dir="$backup_dir/$(basename "$FILE")"
       
       # Cria o diretório de backup aninhado, se necessário
       if [[ ! -d "$nested_backup_dir" ]]; then
-        echo -e "\nmkdir -p '$nested_backup_dir'"
+        echo -e "mkdir $nested_backup_dir"
         if [[ $CHECK_MODE != "-c" ]]; then
           mkdir -p "$nested_backup_dir"
         fi
       fi
       
-      
-  
       # Chamada recursiva para o próximo nível
       backup_files "$FILE" "$nested_backup_dir"
     fi
@@ -112,7 +115,7 @@ function backup_files() {
       local src_file="$src_dir/$(basename "$BACKUP_FILE")"
       if [[ ! -e "$src_file" ]]; then
         local backup_file_size=$(stat -c%s "$BACKUP_FILE")
-        echo "rm -rf '$BACKUP_FILE'"
+        echo "rm -rf $BACKUP_FILE"
         dir_file_deleted=$((dir_file_deleted + 1))
         dir_size_deleted=$((dir_size_deleted + backup_file_size))
         if [[ "$CHECK_MODE" != "-c" ]]; then
@@ -121,7 +124,6 @@ function backup_files() {
       fi
     done
   fi
-
 
   # Fecha a verificação
   shopt -u nullglob
@@ -137,12 +139,11 @@ function backup_files() {
 
   # Exibe o resumo de operações para o diretório atual
   if [[ CHECK_MODE != "-c"  ]]; then
-    echo -e "While backuping $src_dir: $dir_errors Errors; $dir_warnings Warnings; $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B); bytes;\n"
+    echo -e "While backuping $src_dir: $dir_errors Errors; $dir_warnings Warnings; $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B)"
   else
-    echo -e "While backuping $src_dir: $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted B); bytes;\n"
+    echo -e "While backuping $src_dir: $dir_file_update Updated; $dir_file_copy Copied ($dir_size_copied B); $dir_file_deleted Deleted ($dir_size_deleted\B)"
   fi
 }
-
 
 # Inicialização das variáveis dos argumentos -b, -r, -c
 CHECK_MODE=""
@@ -212,7 +213,7 @@ fi
 
 # Cria o diretório de destino, se não existir
 if [[ ! -d "$BACKUP_DIR" ]]; then
-  echo "mkdir -p '$BACKUP_DIR'"
+  echo "mkdir $BACKUP_DIR"
   if [[ $CHECK_MODE != "-c" ]]; then
     mkdir -p "$BACKUP_DIR"
   fi
