@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Função para dar print do comando correto caso haja algum erro
 function usage() {
   echo "Uso: $0 [-c] [-b tfile] [-r regexpr] <SRC_DIR> <BACKUP_DIR>"
@@ -65,7 +66,6 @@ while getopts "cb:r:" opt; do
 
 done
 
-
 # Remove os argumentos e deixa apenas os dois diretórios
 shift $((OPTIND - 1))
 
@@ -97,44 +97,42 @@ fi
 
 # Percorre todos os arquivos no diretório de origem
 for FILE in "$SRC_DIR"/*; do
+  BASENAME=$(basename "$FILE")
 
-
-  FILENAME=$(basename "$FILE" | cut -d. -f1)
   # Verifica se o ficheiro está na lista de exceções
-  if [[ " ${EXCEPTION_FILES[*]} " == *" $FILENAME "* ]]; then
+  if [[ " ${EXCEPTION_FILES[*]} " == *" $BASENAME "* ]]; then
+
+    if [[ -d "$FILE" ]]; then
+      TARGET_DIR="$BACKUP_DIR/$BASENAME"
+      echo "mkdir '$TARGET_DIR'"
+      if [[ "$CHECK_MODE" != "-c" ]]; then
+        mkdir -p "$TARGET_DIR"
+      fi
+    fi
     continue
   fi
 
-  # Verifica se é um ficheiro e se corresponde à expressão regular, se fornecida
-  if [[ -f "$FILE" && ( -z "$REGEX" || "$(basename "$FILE")" =~ $REGEX ) ]]; then
+  # Verifica se é ficheiro e se corresponde ao regex fornecido
+  if [[ -f "$FILE" && ( -z "$REGEX" || "$BASENAME" =~ $REGEX ) ]]; then
 
-    BACKUP_FILE="$BACKUP_DIR/$(basename "$FILE")"
-
-    # Verifica se o ficheiro já existe ou se é mais recente que o backup
+    BACKUP_FILE="$BACKUP_DIR/$BASENAME"
+    # Verifica se é ficheiro e se não se encontra na lista de ficheiros a excluír 
     if [[ ! -f "$BACKUP_FILE" || "$FILE" -nt "$BACKUP_FILE" ]]; then
       echo "cp -a '$FILE' '$BACKUP_FILE'"
       if [[ "$CHECK_MODE" != "-c" ]]; then
         cp -a "$FILE" "$BACKUP_FILE"
       fi
     fi
-    
-  # Verifica se é um diretório
-  elif [[ -d "$FILE" ]]; then
 
-    # Início do comando para chamar a função recursivamente
+  # Para os subdiretórios, chama a função recursivamente e com os mesmos argumentos
+
+  elif [[ -d "$FILE" ]]; then
+  
     CMD=(bash "$0")
-    
-    # Adiciona os argumentos usados no script original
     [[ -n "$CHECK_MODE" ]] && CMD+=("-c")
     [[ -n "$TEXT_FILE" ]] && CMD+=("-b" "$TEXT_FILE")
     [[ -n "$REGEX" ]] && CMD+=("-r" "$REGEX")
-
-    # Adiciona os diretórios
-    CMD+=("$FILE" "$BACKUP_DIR/$(basename "$FILE")")
-
-    # Volta a chamar a mesma função para o diretório
+    CMD+=("$FILE" "$BACKUP_DIR/$BASENAME")
     "${CMD[@]}"
-
   fi
-  
 done

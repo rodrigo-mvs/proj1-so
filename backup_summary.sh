@@ -237,15 +237,12 @@ if [[ "$SRC_SIZE" -gt "$BACKUP_FREE" ]]; then
   FLAG_ERROR=1
 fi
 
-
-
 # Se houver erro ao criar o diretório de backup, exibe mensagem de erro e sai
 if [[ $? -ne 0 ]]; then
   echo "ERROR: Failed to create the backup directory: $BACKUP_DIR"
   TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
   FLAG_ERROR=1
 fi
-
 
 # Verifica se FULL_SRC_DIR é parte de FULL_BACKUP_DIR
 if [[ "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR" || "$FULL_BACKUP_DIR" == "$FULL_SRC_DIR/"* ]]; then
