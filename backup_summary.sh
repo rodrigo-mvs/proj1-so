@@ -32,7 +32,7 @@ function backup_files() {
   local dir_size_copied=0
   local dir_size_deleted=0
 
-  # Faz com que a opção /* no loop fique vazia, caso necessário, para evitar erros
+  # Faz com que a opção /* no loop fique vazia, caso necessário, para evitar erros em caso de diretórios vazios
   shopt -s nullglob
 
   # Primeiro, processa os arquivos no diretório atual
@@ -226,25 +226,27 @@ if [[ ! -d "$BACKUP_DIR" ]]; then
   fi
 fi
 
+# Verifica se SRC_DIR e BACKUP_DIR são diretórios
+if [[ -d "$SRC_DIR" && -d "$BACKUP_DIR" ]]; then
 
+  # Obtém o caminhos completos
+  FULL_SRC_DIR=$(realpath "$SRC_DIR")
+  FULL_BACKUP_DIR=$(realpath "$BACKUP_DIR")
 
-# Obtém o caminhos completos
-FULL_SRC_DIR=$(realpath "$SRC_DIR")
-FULL_BACKUP_DIR=$(realpath "$BACKUP_DIR")
+  # Obtém o diretório pai de SRC_DIR
+  PARENT_BACKUP_DIR=$(dirname "$FULL_BACKUP_DIR")
 
-# Obtém o diretório pai de SRC_DIR
-PARENT_BACKUP_DIR=$(dirname "$FULL_BACKUP_DIR")
+  # Obtém o tamanho do diretório de origem
+  SRC_SIZE=$(du -s "$SRC_DIR" | awk '{print $1}')
+  # Obtém o espaço disponível no diretório de backup
+  BACKUP_FREE=$(df "$PARENT_BACKUP_DIR" | awk 'NR==2 {print $4}')
 
-# Obtém o tamanho do diretório de origem
-SRC_SIZE=$(du -s "$SRC_DIR" | awk '{print $1}')
-# Obtém o espaço disponível no diretório de backup
-BACKUP_FREE=$(df "$PARENT_BACKUP_DIR" | awk 'NR==2 {print $4}')
-
-# Verifica se há armazenamento suficiente no diretório de backup
-if [[ "$SRC_SIZE" -gt "$BACKUP_FREE" ]]; then
-  echo "ERROR: backup directory does not have enough space"
-  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
-  FLAG_ERROR=1
+  # Verifica se há armazenamento suficiente no diretório de backup
+  if [[ "$SRC_SIZE" -gt "$BACKUP_FREE" ]]; then
+    echo "ERROR: backup directory does not have enough space"
+    TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+    FLAG_ERROR=1
+  fi
 fi
 
 # Verifica se FULL_SRC_DIR é parte de FULL_BACKUP_DIR
