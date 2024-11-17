@@ -115,7 +115,6 @@ function backup_files() {
       local src_file="$src_dir/$(basename "$BACKUP_FILE")"
       if [[ ! -e "$src_file" ]]; then
         local backup_file_size=$(stat -c%s "$BACKUP_FILE")
-        echo "rm -rf $BACKUP_FILE"
         dir_file_deleted=$((dir_file_deleted + 1))
         dir_size_deleted=$((dir_size_deleted + backup_file_size))
         if [[ "$CHECK_MODE" != "-c" ]]; then
