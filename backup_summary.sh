@@ -217,14 +217,16 @@ if [[ ! -d "$BACKUP_DIR" ]]; then
   if [[ $CHECK_MODE != "-c" ]]; then
     mkdir -p "$BACKUP_DIR"
   fi
+
+  # Se houver erro ao criar o diretório de backup, exibe mensagem de erro
+  if [[ $? -ne 0 ]]; then
+    echo "ERROR: Failed to create the backup directory: $BACKUP_DIR"
+    TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
+    FLAG_ERROR=1
+  fi
 fi
 
-# Se houver erro ao criar o diretório de backup, exibe mensagem de erro
-if [[ $? -ne 0 ]]; then
-  echo "ERROR: Failed to create the backup directory: $BACKUP_DIR"
-  TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
-  FLAG_ERROR=1
-fi
+
 
 # Obtém o caminhos completos
 FULL_SRC_DIR=$(realpath "$SRC_DIR")
