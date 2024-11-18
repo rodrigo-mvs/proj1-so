@@ -108,6 +108,8 @@ function backup_files() {
     fi
   done
 
+  ...
+
   # Verifica se o diretório de backup existe: se estiver em check e o diretório de backup não existir, não há ficheiros para copiar 
   if [[ -d "$backup_dir" ]]; then
     # Remove arquivos do backup que não estão no diretório de origem
