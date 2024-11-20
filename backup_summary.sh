@@ -110,19 +110,36 @@ function backup_files() {
 
   # Verifica se o diretório de backup existe: se estiver em check e o diretório de backup não existir, não há ficheiros para copiar 
   if [[ -d "$backup_dir" ]]; then
-    # Remove arquivos do backup que não estão no diretório de origem
-    for BACKUP_FILE in "$backup_dir"/*; do
-      local src_file="$src_dir/$(basename "$BACKUP_FILE")"
-      if [[ ! -e "$src_file" ]]; then
+   # Remove arquivos do backup que não estão no diretório de origem
+for BACKUP_FILE in "$backup_dir"/*; do
+  local src_file="$src_dir/$(basename "$BACKUP_FILE")"
+  if [[ ! -e "$src_file" ]]; then
+    if [[ -d "$BACKUP_FILE" ]]; then
+        # Contabilizar os arquivos e pastas dentro da pasta a ser removida
+        local nested_files=$(find "$BACKUP_FILE" -type f | wc -l)
+        local nested_dirs=$(find "$BACKUP_FILE" -type d | wc -l)
+        local backup_file_size=$(du -sb "$BACKUP_FILE" | awk '{print $1}')
+        dir_file_deleted=$((dir_file_deleted + nested_files))
+        dir_size_deleted=$((dir_size_deleted + backup_file_size))
+
+        # echo "rm -rf $BACKUP_FILE (including $nested_files files and $nested_dirs subdirectories)"
+        if [[ "$CHECK_MODE" != "-c" ]]; then
+          rm -rf "$BACKUP_FILE"
+        fi
+      else
+        # Arquivo individual
         local backup_file_size=$(stat -c%s "$BACKUP_FILE")
         dir_file_deleted=$((dir_file_deleted + 1))
         dir_size_deleted=$((dir_size_deleted + backup_file_size))
+        # echo "rm -rf $BACKUP_FILE"
         if [[ "$CHECK_MODE" != "-c" ]]; then
           rm -rf "$BACKUP_FILE"
         fi
       fi
-    done
-  fi
+    fi
+done
+
+  fi  
 
   # Fecha a verificação
   shopt -u nullglob
